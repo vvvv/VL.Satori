@@ -1,0 +1,7 @@
+/artifacts
+/build/bin
+/build/.vs/
+/build/obj/
+*.DotSettings
+/downloads/
+/.nuke/temp/

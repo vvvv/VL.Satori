@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <Target Name="CopySatoriToPublishFolder" AfterTargets="Publish">
+    <PropertyGroup>
+      <_SatoriAssetsDir>$(MsBuildThisFileDirectory)..\assets\</_SatoriAssetsDir>
+    </PropertyGroup>
+
+    <Error Condition="'$(RuntimeIdentifier)' == ''" Text="RuntimeIdentifier is not set. Please set it in the project file or pass it as a command line argument." />
+    <Error Condition="!Exists('$(_SatoriAssetsDir)$(RuntimeIdentifier)')" Text="Satori assets not found in $(_SatoriAssetsDir)$(RuntimeIdentifier)" />
+
+    <ItemGroup>
+      <_SatoriAssets Include="$(_SatoriAssetsDir)$(RuntimeIdentifier)\*.*" />
+    </ItemGroup>
+
+    <Copy SourceFiles="@(_SatoriAssets)" DestinationFolder="$(PublishDir)" />
+  </Target>
+
+</Project>
