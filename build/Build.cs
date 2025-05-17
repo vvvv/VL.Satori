@@ -35,6 +35,9 @@ class Build : NukeBuild
     [Secret]
     readonly string vvvvOrgNugetKey;
 
+    string SatoriVersion => "2025.516.0";
+    string PackageVersion => "1.0.0-preview";
+
     AbsolutePath DownloadDirectory => RootDirectory / "downloads";
     AbsolutePath ArtifactsDirectory => RootDirectory / "artifacts";
     AbsolutePath AssetsDirectory => ArtifactsDirectory / "assets";
@@ -56,13 +59,12 @@ class Build : NukeBuild
         .DependsOn(Clean)
         .Executes(async () =>
         {
-            var version = "2025.516.0";
             string[] rids = [ "win-x64", "win-arm64", "osx-x64", "osx-arm64", "linux-x64", "linux-arm64"];
             foreach (var rid in rids)
             {
                 var fileName = $"{rid}.zip";
                 var zipFile = DownloadDirectory / fileName;
-                await HttpTasks.HttpDownloadFileAsync($"https://github.com/ppy/Satori/releases/download/{version}/{fileName}", zipFile);
+                await HttpTasks.HttpDownloadFileAsync($"https://github.com/ppy/Satori/releases/download/{SatoriVersion}/{fileName}", zipFile);
 
                 var unzipPath = DownloadDirectory / rid;
                 zipFile.UnZipTo(unzipPath);
@@ -80,7 +82,7 @@ class Build : NukeBuild
             NuGetPack(s => s
                 .SetTargetPath(ArtifactsDirectory / "VL.Satori.nuspec")
                 .SetOutputDirectory(ArtifactsDirectory)
-                .SetVersion(version)
+                .SetVersion(PackageVersion)
             );
         });
 
@@ -89,7 +91,7 @@ class Build : NukeBuild
         .Requires(() => vvvvOrgNugetKey)
         .Executes(() =>
         {
-            foreach (var file in AssetsDirectory.GetFiles("*.nupkg"))
+            foreach (var file in ArtifactsDirectory.GetFiles("*.nupkg"))
             {
                 NuGetPush(_ => _
                     .SetTargetPath(file)
