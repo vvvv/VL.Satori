@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Nuke.Common;
 using Nuke.Common.CI;
+using Nuke.Common.CI.GitHubActions;
 using Nuke.Common.Execution;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
@@ -10,7 +11,16 @@ using Nuke.Common.Tools.NuGet;
 using Nuke.Common.Utilities.Collections;
 using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.PathConstruction;
+using static Nuke.Common.Tools.NuGet.NuGetTasks;
 
+[GitHubActions(
+    "main",
+    GitHubActionsImage.WindowsLatest,
+    OnPushBranches = ["main"],
+    Lfs = true,
+    Submodules = GitHubActionsSubmodules.Recursive,
+    InvokedTargets = [nameof(Deploy)],
+    ImportSecrets = [nameof(vvvvOrgNugetKey)])]
 class Build : NukeBuild
 {
     /// Support plugins are available for:
@@ -19,10 +29,11 @@ class Build : NukeBuild
     ///   - Microsoft VisualStudio     https://nuke.build/visualstudio
     ///   - Microsoft VSCode           https://nuke.build/vscode
 
-    public static int Main () => Execute<Build>(x => x.Package);
+    public static int Main () => Execute<Build>(x => x.Pack);
 
-    [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
-    readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
+    [Parameter]
+    [Secret]
+    readonly string vvvvOrgNugetKey;
 
     AbsolutePath DownloadDirectory => RootDirectory / "downloads";
     AbsolutePath ArtifactsDirectory => RootDirectory / "artifacts";
@@ -41,7 +52,7 @@ class Build : NukeBuild
         {
         });
 
-    Target Package => _ => _
+    Target Pack => _ => _
         .DependsOn(Clean)
         .Executes(async () =>
         {
@@ -66,11 +77,24 @@ class Build : NukeBuild
             var targetsFile = RootDirectory / "build" / "VL.Satori.targets";
             targetsFile.CopyToDirectory(ArtifactsDirectory / "build");
 
-            NuGetTasks.NuGetPack(s => s
+            NuGetPack(s => s
                 .SetTargetPath(ArtifactsDirectory / "VL.Satori.nuspec")
                 .SetOutputDirectory(ArtifactsDirectory)
                 .SetVersion(version)
             );
         });
 
+    Target Deploy => _ => _
+        .DependsOn(Pack)
+        .Requires(() => vvvvOrgNugetKey)
+        .Executes(() =>
+        {
+            foreach (var file in AssetsDirectory.GetFiles("*.nupkg"))
+            {
+                NuGetPush(_ => _
+                    .SetTargetPath(file)
+                    .SetApiKey(vvvvOrgNugetKey)
+                    .SetSource("nuget.org"));
+            }
+        });
 }

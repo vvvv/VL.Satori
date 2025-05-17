@@ -25,7 +25,8 @@
       "type": "string",
       "enum": [
         "Clean",
-        "Package",
+        "Deploy",
+        "Pack",
         "Restore"
       ]
     },
@@ -100,13 +101,9 @@
   "allOf": [
     {
       "properties": {
-        "Configuration": {
+        "vvvvOrgNugetKey": {
           "type": "string",
-          "description": "Configuration to build - Default is 'Debug' (local) or 'Release' (server)",
-          "enum": [
-            "Debug",
-            "Release"
-          ]
+          "default": "Secrets must be entered via 'nuke :secrets [profile]'"
         }
       }
     },
